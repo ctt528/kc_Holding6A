@@ -1,0 +1,407 @@
+
+
+{bullfib upperwick is decent. More of a traditional bull fib bar. Want close around 33% retracement. 
+	2nd bar is basically already qualified(within 33%-66% window based off bullfib) and doesnt need to retrace backwards before breaking bullfib high = entry long } 
+
+
+Once clearprintlog;
+[intrabarordergeneration = true];
+
+Inputs:
+	PercentOFFib_T1(.50),
+	ticksize(.25),
+	tickvalue(12.50),
+	ContractsEntered(4),
+	contractsEnteredMinus1(3),
+	ATRStarttime(0830),
+	ATREndtime(1500);
+	
+
+Vars:
+//bull
+	intrabarpersist BullFib_Bottomwick(0), 
+	intrabarpersist BullFib_Upperwick(0),
+	intrabarpersist BullFib_Range(0),
+	intrabarpersist BullFib(False),
+	Intrabarpersist BullSixtysix(0),
+	intrabarpersist BullSecondBarLow(0),
+	intrabarpersist BullSecondBar_Range(0),
+	intrabarpersist BullSecondBar_Upperwick(0),
+	intrabarpersist BullSecondBar_Bottomwick(0),
+	intrabarpersist BullSecondBar_CandlebodyRange(0),
+	intrabarpersist BullFib_CandlebodyRange(0),
+	intrabarpersist BullTarget(0),
+	Intrabarpersist BullCondition(False),
+	Intrabarpersist BullTargetFar(0),
+	Intrabarpersist BullMoveStop(0),
+
+//bear	
+	intrabarpersist BearFib_Bottomwick(0),
+	intrabarpersist BearFib_Upperwick(0),
+	intrabarpersist BearFib_Range(0),
+	intrabarpersist BearFib(False),
+	intrabarpersist SecondBar_Range(0),
+	intrabarpersist SecondBar_Upperwick(0),
+	intrabarpersist SecondBar_Bottomwick(0),
+	intrabarpersist Targett(0),
+	intrabarpersist BearFib_CandlebodyRange(0),
+	intrabarpersist SecondBar_CandlebodyRange(0),
+	intrabarpersist BearsixtySix(0),
+	Intrabarpersist BearCondition(False), 
+	Intrabarpersist BearTargetFar(0),
+	Intrabarpersist BearMoveStop(0),
+	
+	BullTargetone(0),
+	BullTargettwo(0),
+	BullTargetthree(0),
+	BullTargetfour(0),
+	BullTargetfive(0),
+	BullTargetsix(0),
+	BullSecondBarLowStop(0),
+	
+	BearTargetone(0),
+	BearTargettwo(0),
+	BearTargetthree(0),
+	BearTargetfour(0),
+	BearTargetfive(0),
+	BearTargetsix(0),
+	intrabarpersist BearSecondBarhighStop(0),
+	
+	Intrabarpersist Bearthirtythree(0),
+	intrabarpersist BearfibTime(0),
+	intrabarpersist Bullthirtythree(0),
+	intrabarpersist BullfibTime(0),
+	intrabarpersist BearpivotSTOP(0),
+	intrabarpersist BullpivotSTOP(0),
+	intrabarpersist BearTarget(0),
+	intrabarpersist Bearlow (0),
+	intrabarpersist bullhigh(0),
+	intrabarpersist BearFib_OpenLow_Range(0),
+	//intrabarpersist counter(0),
+	intrabarpersist bearrange(0),
+	intrabarpersist bullrange(0),
+	intrabarpersist BearIH(0),
+	intrabarpersist BullIL(0),
+	intrabarpersist BearexactticksT1(0),
+	intrabarpersist BearexactticksT1_Rounded(0),
+	intrabarpersist BullexactticksT1(0),
+	intrabarpersist BullexactticksT1_Rounded(0),
+	intrabarpersist timecheck(false),
+	
+	min60Counter(0),
+	min60Array2SUM(0),
+	min60Array2AVG(0),
+	min60Counter2(0),
+	ii(0),
+	counter(0),
+	TruerangeSD(0),
+	TruerangeStandardDev(0),
+	iii(0),
+	variance(0),
+	pop(0),
+	sumArraySUM(0),
+	ATRLength(24),
+	intrabarpersist BullFib_OpenHighRange(0),
+	ccounter(0),
+	Bearrisk(0),
+	BearTicks_Risk(0),
+	BearMoney1contract_Risk(0),
+	BearMoneyALLContracts_Risk(0),
+	BearMoney1Contract_T1(0),
+	BearNumTicksToBreakeven_T1_RoundedDN(0),
+	BearPriceMoveToBreakeven_T1(0),
+	Bear_T1(0),
+	BullRisk(0),
+	BullTicks_Risk(0),
+	BullMoney1contract_Risk(0),
+	BullMoneyALLContracts_Risk(0),
+	BullMoney1Contract_T1(0),
+	BullNumTicksToBreakeven_T1(0),
+	BullNumTicksToBreakeven_T1_RoundedDN(0),
+	BullPriceMoveToBreakeven_T1(0),
+	Bull_T1(0),
+	BearNumTicksToBreakeven_T1(0);
+	
+arrays:
+		min60Array[] (0),
+		min60Array2[] (0),
+		TRArray[] (0),
+		ATRArray[] (0),
+		DateArray[] (0),
+		SumArray[] (0);
+//////////////////////////////////////////////////////////////////////////////////////////////
+//ATR:
+If barstatus(1) = 2 then 
+Begin
+	
+	If time >= ATRStarttime and time <= ATREndtime then
+begin
+{if bartype = 1 and barinterval = 60 then //9,10,11,12,13,14,15}
+BEGIN
+	min60Counter = min60Counter + 1;
+	
+	Array_setmaxindex(min60Array, min60Counter); 
+	min60Array[min60Counter] = Truerange[0];	
+	//When counter is 96, remember to go back just 24. so from 72 to 96
+	if min60Counter > ATRLength then
+	begin
+		//Condition1 = true;
+		For ii = min60Counter downto (min60Counter-ATRLength)
+		Begin
+			If ii = min60counter then min60counter2 = 0;
+			min60counter2 = min60counter2 + 1;
+			
+			array_setmaxindex(min60Array2, 	min60counter2);
+			min60Array2[min60Counter2] = min60Array[ii]; 	
+			If min60Counter2 = ATRLength then	//once we have 24 true ranges, compute avg
+			Begin
+				min60Array2SUM = array_sum(min60Array2, 0, min60Counter2);
+				Min60Array2AVG = iff(min60Counter2 <> 0, min60Array2SUM / min60Counter2, 1);//compute avg of the 24 true ranges. 
+				
+				
+				//SD
+				counter = counter + 1;
+				array_setmaxindex(TRArray, counter);
+				TRArray[counter] = truerange;
+				array_setmaxindex(ATRArray, counter);
+				ATRArray[counter] = Min60Array2AVG;
+				array_setmaxindex(DateArray, counter);//just to check date
+				DateArray[counter] = Date;//just to check date
+				If counter > 100 then
+				Begin
+					For iii = counter downto (counter-100)
+					Begin
+						Array_setmaxindex(SumArray, counter);
+						SumArray[iii] = Power((TRArray[iii]-ATRArray[iii]),2);
+						sumArraySUM = array_sum(SumArray, iii, counter);
+						pop = counter - iii;
+						variance = iff(pop<>0, sumArraySUM / pop ,1);
+						TruerangeStandardDev = Squareroot(variance);
+		//Print(counter, "   ", iii,"   ",TRarray[iii],"  ", ATRArray[iii]);
+					end;
+				end;		
+
+			End;
+		End;
+	End;
+			
+END;
+end;//time-end		
+End;//barstatus	
+	//print(TruerangeStandardDev,"		", 	Min60Array2AVG, "  "," = ",truerange[1]); //must be TR[1] bc this computes every tick.
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+If barstatus(1) = 2 then
+Begin
+	ccounter = ccounter +1;
+//print(ccounter); //This counts every bar. Above 101 means ok for the ATR
+end;
+
+
+//WHILE THE BAR IS IN PLAY
+If barstatus(1) = 1 then 
+Begin
+
+//Reset
+If BearfibTime <> time[1] then 
+Begin
+	BearFib = false;
+	BearCondition = false;
+End;
+If Bearfib = false then 
+Begin
+	BearCondition = false;
+End;
+
+	if marketposition = 0 then
+	Begin
+		BearFib_Bottomwick = (close[1] - low[1]);
+		BearFib_Upperwick = (High[1] - open[1]);
+		BearFib_Range = (High[1] - Low[1]);
+		BearFib_CandlebodyRange = (Open[1] - close[1]);
+		BearFib_OpenLow_Range = (Open[1] - Low[1]);
+
+	//BEAR FIB	
+		if Truerange[1] > (Min60Array2AVG + TrueRangeStandardDev) 
+		and
+		BearFib_upperwick < (BearFib_Range * .33) 
+		And
+		BearFib_CandlebodyRange / BearFib_Range > .50 	
+		and
+		close[1] <=  (low[1] + (BearFib_OpenLow_Range * .50))
+		And
+		close[1] >=  (low[1] + (BearFib_OpenLow_Range * .25))
+		and
+		close[1] < open[1]	
+		Then 
+		BearFib = true
+		Else 
+		BearFib = False;	
+	//if last bar was a BearFib
+		if bearfib = true then
+		Begin
+			Bearthirtythree = low[1] + (BearFib_Range * .25);
+			bearsixtysix = low[1] + (BearFib_Range * .66);
+			//bearsixtysix = value2 + (1 - mod(value1,.25));
+			BearfibTime = time[1];
+			Bearlow = low[1];
+			BearIH = high;
+		End;
+	
+	//BEAR SECOND BAR
+	 	if Bearfib = true and Bearcondition = false then
+	 	Begin
+	 		if
+			Low > low[1] 
+			And
+			High > Bearthirtythree
+			and
+			High < Bearsixtysix
+			Then Bearcondition = true;
+			If low < low[1] or high > Bearsixtysix then Bearfib = false;
+		end;
+			If Bearfib = false then //Reset
+			Begin
+				BearCondition = false;
+			End;
+		
+		
+	//Then if it breaks the fibbar low. sellllllllitttttttttt
+		If Bearfib = true and Bearcondition = true then
+		Begin
+			If high > bearsixtysix then bearfib = false;	
+			If low < low[1] then
+			begin
+				BearTarget = iff(BearFib_Range <>0, (Low - (Low[1] - high) / BearFib_Range),1);
+				BearpivotSTOP = high;
+				Bearrange = Bearfib_range;
+				If time >= ATRStarttime and time <= ATREndtime then Timecheck = true else Timecheck = false;
+				if marketposition = 0 and barnumber > 101 and Timecheck = true and ccounter > 124 then sellshort("short") ContractsEntered contract next bar at market;
+				//print(low[1],"  ",date,"  ", time);
+			end;
+		End;
+	End;
+End;
+/////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////	
+////////////////////////////////////////////////////////////////////////////	
+If barstatus(1) = 1 then 
+Begin
+//Reset
+If BullfibTime <> time[1] then 
+Begin
+	BullFib = false;
+	BullCondition = false;
+End;
+If bullfib = false then
+Begin
+	BullCondition = false;
+End;
+
+	if marketposition = 0 then
+	Begin
+		BullFib_Bottomwick = (open[1] - low[1]);
+		BullFib_Upperwick = (High[1] - close[1]);
+		BullFib_Range = (High[1] - Low[1]);
+		BullFib_CandlebodyRange = (close[1] - open[1]);
+		BullFib_OpenHighRange = (High[1] - open[1]);
+	//BEAR FIB	
+		if Truerange[1] > (Min60Array2AVG + TrueRangeStandardDev) 
+		and
+		BullFib_bottomwick < (BullFib_Range * .33) 
+		And
+		BullFib_CandlebodyRange / BullFib_Range > .50 	
+		and
+		close[1] >=  (high[1] - (BullFib_OpenHighRange * .50))	
+		and
+		close[1] <=  (high[1] - (BullFib_OpenHighRange * .25))
+		And 
+		close[1] > open[1]
+		Then 
+		BullFib = true
+		Else 
+		BullFib = False;	
+//if bullfib = true then Print(time,"		", date,"		");
+	//if last bar was a BearFib
+		if Bullfib = true then
+		Begin
+			Bullthirtythree = high[1] - (BullFib_Range * .25);
+			bullsixtysix = high[1] - (BullFib_Range * .66);
+			//bullsixtysix = value1 - mod(value1,.25);	//Bullsixtysix + (.25 - mod(Bullsixtysix, .25));
+			BullfibTime = time[1];
+			bullhigh = high[1];
+			BullIL = Low;
+		End;
+	
+	//BULL SECOND BAR
+	 	if bullfib = true and Bullcondition = false then
+	 	Begin
+	 		if
+			High < high[1] 
+			And
+			low < Bullthirtythree
+			and
+			low > Bullsixtysix
+			Then Bullcondition = true;
+			If high > high[1] or low < Bullsixtysix then bullfib = false;
+		end;
+			If bullfib = false then //reset
+			Begin
+				BullCondition = false;
+			End;
+		
+	//Then if it breaks the fibbar low. sellllllllitttttttttt
+		If Bullfib = true and Bullcondition = true then
+		Begin
+			If Low < bullsixtysix then Bullfib = false;	
+			If high > high[1] then
+			begin
+				BullTarget = iff(BullFib_Range <>0, (High + (high[1] - low) / BullFib_Range),1);
+				BULLpivotSTOP = low;
+				Bullrange = bullfib_range;
+				If time >= ATRStarttime and time <= ATREndtime then Timecheck = true else Timecheck = false;
+				if marketposition = 0 and barnumber > 101 and Timecheck = true and ccounter > 124 then Buy("Long") ContractsEntered contract next bar at market;
+			end;
+		End;
+	End;
+End;
+
+	
+//EXITS		
+If marketposition = -1 then
+Begin
+	Begin
+	//Compute risk:
+	BearRisk = BearIH - Entryprice(0){Bearlow};
+	BearTicks_Risk = iff(TickSize<>0, Bearrisk/TickSize,1);
+	BearMoney1contract_Risk = BearTicks_Risk * TickValue;
+	//BearMoneyALLContracts_Risk = BearMoney1contract_Risk * NumContracts_Risk; //This is for pyramiding the otherway. To have r:r having reward very close to entry, we take profit very early and have 1contracts worth of risk. (cheating! man I tell you. I risk 108 ticks but my breakeven point is 12ticks in the green.)x10entry, x9 T1.
+	BearMoney1Contract_T1 = ContractsEnteredminus1 * TickValue;
+	BearNumTicksToBreakeven_T1 = iff(BearMoney1Contract_T1<>0, BearMoney1Contract_Risk / BearMoney1Contract_T1,1);
+	BearNumTicksToBreakeven_T1_RoundedDN = BearNumtickstoBreakeven_T1 + (1 - mod(BearNumTicksToBreakeven_T1, 1)); //CHANGED TO ROUNDING UP
+	BearPriceMoveToBreakeven_T1 = BearNumTicksToBreakeven_T1_RoundedDN * TickSize; 
+	Bear_T1 = Entryprice(0) - BearPriceMoveToBreakeven_T1;
+		Buytocover("Stop") ContractsEntered contract next bar at BearIH stop;
+		Buytocover("T1") ContractsEnteredminus1 contract next bar at Bear_T1 limit;
+		Buytocover("T2") 1 contract next bar at (BearLow - (BearFib_Range * PercentOfFib_T1)) limit;			
+	End;
+End;
+
+If marketposition = 1 then
+Begin
+	Begin
+		//Compute risk:
+		BullRisk = Entryprice(0){BullHigh} - BullIL;
+		BullTicks_Risk = iff(TickSize<>0, Bullrisk/TickSize,1);
+		BullMoney1contract_Risk = BullTicks_Risk * TickValue;
+		//BullMoneyALLContracts_Risk = BullMoney1contract_Risk * NumContracts_Risk; //This is for pyramiding the otherway. To have r:r having reward very close to entry, we take profit very early and have 1contracts worth of risk. (cheating! man I tell you. I risk 108 ticks but my breakeven point is 12ticks in the green.)x10entry, x9 T1.
+		BullMoney1Contract_T1 = ContractsEnteredminus1 * TickValue;
+		BullNumTicksToBreakeven_T1 = iff(BullMoney1Contract_T1<>0, BullMoney1Contract_Risk / BullMoney1Contract_T1,1);
+		BullNumTicksToBreakeven_T1_RoundedDN = BullNumtickstoBreakeven_T1 + (1 - mod(BullNumTicksToBreakeven_T1, 1));	//CHANGED TO ROUNDED UP
+		BullPriceMoveToBreakeven_T1 = BullNumTicksToBreakeven_T1_RoundedDN * TickSize; 
+		Bull_T1 = Entryprice(0) + BullPriceMoveToBreakeven_T1;
+		Sell("Stop.") ContractsEntered contract next bar at BullIL stop;
+		Sell("T1.") Contractsenteredminus1 contract next bar at Bull_T1 limit;//NextOpposingDemand limit; //Entryprice - ((BullsixtySix - entryprice)/2){(NextOpposingDemand)} limit;	
+		Sell("T2.") 1 contract next bar at (BullHigh + (BullFib_Range * PercentOfFib_T1)) limit;
+	end;
+End;	
